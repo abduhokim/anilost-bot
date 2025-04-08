@@ -91,7 +91,7 @@ async def relay_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # 🛠 Asosiy funksiyalar
 async def main():
     import os
-    TOKEN = os.environ.get("BOT_TOKEN")
+    TOKEN = os.environ.get("7670469438:AAH17F1_Ztumqea7TSQ8qsSmtLtLzjjNwO8")
     app = ApplicationBuilder().token(TOKEN).build()
 
     app.add_handler(CommandHandler("start", start))
