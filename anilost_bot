@@ -1,109 +1,56 @@
-import logging
-import random
-import asyncio
 from telegram import Update, ReplyKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
+    ContextTypes,
     CommandHandler,
     MessageHandler,
-    ContextTypes,
     filters,
 )
 
-# 🧠 Oddiy AI javoblar (demo uchun)
-AI_RESPONSES = [
-    "Qanday yordam bera olaman?",
-    "Yaxshi savol. Buni o‘rganamiz!",
-    "Men AIman, siz bilan suhbatlashishdan xursandman!",
-    "Bu haqida o‘ylab ko‘raman :)"
-]
-
-# 🎞 Tasodifiy animelar ro‘yxati
-ANIME_LIST = [
-    {"title": "Jujutsu Kaisen", "episodes": 48, "movie": 1},
-    {"title": "Attack on Titan", "episodes": 87, "movie": 0},
-    {"title": "One Piece", "episodes": 1000, "movie": 15},
-    {"title": "Naruto", "episodes": 720, "movie": 11},
-    {"title": "Demon Slayer", "episodes": 44, "movie": 2}
-]
-
-# 🌸 Gulli tugmalar
-main_buttons = ReplyKeyboardMarkup([
-    ["🌸 Anime menyu", "🔍 Kod orqali qidirish"],
-    ["🤖 AI qidiruv", "🎲 Tasodifiy anime"],
-    ["🕵 Anonim suhbat"]
-], resize_keyboard=True)
-
-# 📓 Anonim chat juftlari
-waiting_users = []
-chat_pairs = {}
-
-# 🚀 Boshlanish komandasi
+# /start komandasi
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Salom! Bu Anime & AI Bot!", reply_markup=main_buttons)
+    keyboard = [
+        ["Tasodifiy anime"],
+        ["Anime menyu", "Kod orqali qidirish", "AI qidiruv"]
+    ]
+    reply_markup = ReplyKeyboardMarkup(keyboard, resize_keyboard=True)
+    await update.message.reply_text("Xush kelibsiz! Quyidagi tugmalardan birini tanlang:", reply_markup=reply_markup)
 
-# 🎲 Tasodifiy anime chiqarish
-async def random_anime(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    anime = random.choice(ANIME_LIST)
-    msg = (
-        f"🎞 <b>Anime nomi:</b> <i>{anime['title']}</i>\n"
-        f"📺 <b>Qismlari:</b> <i>{anime['episodes']}</i>\n"
-        f"🎬 <b>Filmlar soni:</b> <i>{anime['movie']}</i>"
-    )
-    await update.message.reply_text(msg, parse_mode="HTML")
+# Tasodifiy anime tugmasi
+import random
+async def handle_random(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    animelar = [
+        "Naruto 🍥", "One Piece ☠️", "Attack on Titan 🛡️",
+        "Jujutsu Kaisen 🔥", "Demon Slayer 🗡️", "Death Note 📓"
+    ]
+    tanlangan = random.choice(animelar)
+    await update.message.reply_text(f"Tasodifiy anime: {tanlangan} #animeni_yuklab_olish_uchun_ssilka")
 
-# 🤖 AI javobi
-async def ai_response(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🤖 " + random.choice(AI_RESPONSES))
+# Anime menyu tugmasi
+async def handle_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("📋 Anime menyu: (Hali ishlab chiqilmoqda)")
 
-# 📥 Kod orqali qidirish
-async def code_search(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("🔍 Kodni yuboring, izlab beraman!")
+# Kod orqali qidirish tugmasi
+async def handle_kod_qidir(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🔍 Kod orqali qidiruv: Kod yuboring...")
 
-# 🎛 Anime menyusi
-async def anime_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    text = "\n".join([f"{i+1}. {anime['title']}" for i, anime in enumerate(ANIME_LIST)])
-    await update.message.reply_text("🎌 Mashhur animelar:\n" + text)
+# AI qidiruv tugmasi
+async def handle_ai(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🤖 AI orqali qidiruv: Nima qidirmoqchisiz?")
 
-# 🕵 Anonim chat boshlash
-async def anonymous_chat(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id in chat_pairs:
-        await update.message.reply_text("✅ Siz allaqachon anonim suhbatdasiz.")
-        return
-    if waiting_users:
-        partner_id = waiting_users.pop(0)
-        chat_pairs[user_id] = partner_id
-        chat_pairs[partner_id] = user_id
-        await context.bot.send_message(partner_id, "✅ Sizga suhbatdosh topildi!")
-        await update.message.reply_text("✅ Sizga suhbatdosh topildi!")
-    else:
-        waiting_users.append(user_id)
-        await update.message.reply_text("⏳ Suhbatdosh qidirilmoqda...")
-
-# 💬 Xabar uzatish anonim chatda
-async def relay_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    if user_id in chat_pairs:
-        partner_id = chat_pairs[user_id]
-        await context.bot.send_message(partner_id, update.message.text)
-
-# 🛠 Asosiy funksiyalar
-async def main():
-    import os
-    TOKEN = os.environ.get("7670469438:AAH17F1_Ztumqea7TSQ8qsSmtLtLzjjNwO8")
-    app = ApplicationBuilder().token(TOKEN).build()
+# Asosiy ishga tushirish
+def main():
+    app = ApplicationBuilder().token("BOT_TOKEN").build()
 
     app.add_handler(CommandHandler("start", start))
-    app.add_handler(MessageHandler(filters.Regex("Anime menyu"), anime_menu))
-    app.add_handler(MessageHandler(filters.Regex("Kod orqali qidirish"), code_search))
-    app.add_handler(MessageHandler(filters.Regex("AI qidiruv"), ai_response))
-    app.add_handler(MessageHandler(filters.Regex("Tasodifiy anime"), random_anime))
-    app.add_handler(MessageHandler(filters.Regex("Anonim suhbat"), anonymous_chat))
-    app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), relay_message))
 
-    print("✅ Bot ishga tushdi...")
-    await app.run_polling()
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("^Tasodifiy anime$"), handle_random))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("^Anime menyu$"), handle_menu))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("^Kod orqali qidirish$"), handle_kod_qidir))
+    app.add_handler(MessageHandler(filters.TEXT & filters.Regex("^AI qidiruv$"), handle_ai))
+
+    print("Bot ishga tushdi...")
+    app.run_polling()
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
